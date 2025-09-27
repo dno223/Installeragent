@@ -1,0 +1,95 @@
+# Default recipes for the installer-agent
+# Add new apps by appending blocks with the same structure.
+
+# --- OpenGRC native (mac & linux/wsl) ---
+opengrc:
+  os: ["mac", "linux", "wsl"]
+  steps:
+    # mac prerequisites
+    - run: brew update
+      when: "mac"
+    - run: brew install git php composer node sqlite php-intl
+      when: "mac"
+
+    # linux/wsl prerequisites
+    - run: sudo apt update
+      when: "linux"
+    - run: sudo apt install -y git curl unzip php php-cli php-mbstring php-xml php-bcmath php-zip php-curl php-intl composer nodejs npm sqlite3
+      when: "linux"
+    - run: sudo apt update
+      when: "wsl"
+    - run: sudo apt install -y git curl unzip php php-cli php-mbstring php-xml php-bcmath php-zip php-curl php-intl composer nodejs npm sqlite3
+      when: "wsl"
+
+    # get source
+    - run: git clone https://github.com/LeeMangold/OpenGRC.git || true
+      cwd: "."
+
+    # run project installer (does composer/npm tasks)
+    - run: bash install.sh
+      cwd: "./OpenGRC"
+
+    # sanity checks
+    - run: php -v && composer --version && node -v && npm -v
+      cwd: "./OpenGRC"
+    - run: php artisan --version
+      cwd: "./OpenGRC"
+
+  post_install_notes: |
+    OpenGRC installed locally.
+    Dev server:
+      cd OpenGRC
+      php artisan serve --host 0.0.0.0 --port 8000
+
+    If you hit permission/db issues:
+      ./set_permissions
+
+    Unattended init:
+      php artisan opengrc:install --unattended
+
+# --- OpenGRC via Docker/Compose (requires Docker) ---
+opengrc_docker:
+  os: ["mac", "linux", "wsl", "windows"]
+  steps:
+    - run: git clone https://github.com/LeeMangold/OpenGRC.git || true
+      cwd: "."
+    - run: bash -lc 'cat > docker-compose.yml << "YAML"
+services:
+  opengrc:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "false"
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/storage/opengrc.sqlite
+    volumes:
+      - ./storage:/var/www/html/storage
+YAML'
+      cwd: "./OpenGRC"
+    - run: docker compose up -d --build
+      cwd: "./OpenGRC"
+    - run: docker compose exec -T opengrc php artisan opengrc:install --unattended || true
+      cwd: "./OpenGRC"
+    - run: docker compose exec -T opengrc ./set_permissions || true
+      cwd: "./OpenGRC"
+  post_install_notes: |
+    Open http://localhost:8080
+    If you hit permission/db issues, check container logs and rerun the last two steps.
+
+# --- Example general package (nginx) ---
+nginx:
+  os: ["mac", "linux", "windows"]
+  steps:
+    - run: brew install nginx
+      when: "mac"
+    - run: sudo apt update && sudo apt install -y nginx
+      when: "linux"
+    - run: winget install -e --id Nginx.Nginx
+      when: "windows"
+  post_install_notes: |
+    Start and test http://localhost:
+      macOS:  brew services start nginx
+      Linux:  sudo systemctl start nginx
+      Win:    Start via Services or after install
