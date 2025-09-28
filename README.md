@@ -61,18 +61,6 @@ appname:
 
 ⚠️ You own the commands in `recipes.yaml`. Keep them minimal and trustworthy.
 
----
-
-## Portfolio Tips (how to showcase)
-- **Story-first README**: Explain problem → constraints (local, auditable, repeatable) → solution (recipes + allowlist).
-- **Before/After GIF**: Terminal session running `python agent.py opengrc --yes`.
-- **Design Notes**: Outline the sandbox and allowlist decision, and how to extend safely.
-- **Extensibility**: Add one more recipe (e.g., CISO-Assistant or nginx + MySQL) to show range.
-- **CI**: This repo includes a basic GitHub Action that validates `agent.py` and loads `recipes.yaml`.
-- **Blog Post**: “Building a Local Installer Agent for Repeatable App Setups” with code snippets from this repo.
-
----
-
 ## Add your own app
 1. Append a new block in `recipes.yaml`.
 2. If a command is blocked, add its executable name to `ALLOW_CMDS` in `agent.py`.
